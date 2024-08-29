@@ -1,14 +1,39 @@
 "use client";
 
-import { useState, useRef } from "react";
-import { videos } from "@/lib/constants";
+import { useState, useEffect } from "react";
+import { videos } from "@/lib/constants"; // Assuming videos is an array of video objects
 import { Play } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 
 export default function Home() {
   const [playingVideos, setPlayingVideos] = useState<{ [key: number]: boolean }>({});
-  const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
+  const [visitorCount, setVisitorCount] = useState<number>(0);
+
+  useEffect(() => {
+    // Check if the visitor has a unique ID in localStorage
+    const visitorId = localStorage.getItem("visitorId");
+
+    if (!visitorId) {
+      // If no visitor ID, generate one and store it
+      const newVisitorId = `visitor-${new Date().getTime()}`;
+      localStorage.setItem("visitorId", newVisitorId);
+
+      // Increment the visitor count
+      setVisitorCount((prevCount) => {
+        const newCount = prevCount + 1;
+
+        // Store the updated visitor count in localStorage
+        localStorage.setItem("visitorCount", JSON.stringify(newCount));
+
+        return newCount;
+      });
+    } else {
+      // If visitor ID exists, load the visitor count from localStorage
+      const storedVisitorCount = JSON.parse(localStorage.getItem("visitorCount") || "0");
+      setVisitorCount(storedVisitorCount);
+    }
+  }, []);
 
   const handlePlayClick = (index: number) => {
     setPlayingVideos((prev) => ({
@@ -16,7 +41,7 @@ export default function Home() {
       [index]: true,
     }));
 
-    const videoElement = videoRefs.current[index];
+    const videoElement = document.querySelector(`video[data-index="${index}"]`) as HTMLVideoElement | null;;
     if (videoElement) {
       videoElement.play();
       videoElement.muted = false;
@@ -32,7 +57,7 @@ export default function Home() {
             alt="twitter"
             width={90}
             height={90}
-            className='object-cover w-[90px] h-[90px] cursor-pointer'
+            className="object-cover w-[90px] h-[90px] cursor-pointer"
           />
         </Link>
       </div>
@@ -51,9 +76,7 @@ export default function Home() {
               </button>
             )}
             <video
-              ref={(el) => {
-                videoRefs.current[index] = el;
-              }}
+              data-index={index}
               src={video.src}
               className="w-fit h-full object-contain"
               autoPlay={playingVideos[index]}
@@ -72,7 +95,7 @@ export default function Home() {
             alt="instagram"
             width={90}
             height={90}
-            className='object-cover w-[90px] h-[90px] cursor-pointer'
+            className="object-cover w-[90px] h-[90px] cursor-pointer"
           />
         </Link>
       </div>
